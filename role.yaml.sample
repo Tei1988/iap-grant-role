@@ -1,0 +1,5 @@
+role:
+  "alice@example.com":
+    X-GRANT-ROLE: ADMIN
+  "bob@example.com":
+    X-GRANT-ROLE: ADMIN

@@ -1,0 +1,5 @@
+vendor
+.dockerignore
+Dockerfile
+iap-grant-role
+*.yaml.sample

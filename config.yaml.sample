@@ -1,0 +1,13 @@
+authProvider:
+  name: iap
+  options:
+    publicKeyMap:
+      OkEuGA: "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZ01t7BO7a1n6tgy8WuzCbDUaxQwlcr75tktj8YZ5GeKXdJAYGhyksJEGZkaXUDDsxlxUFORPfgG7iwKdkEPNnA=="
+      UlmhOQ: "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAET0DXDKPRhYGNGy5P9OeI/Lxa6IwEFNv5N86By3mdORe3KPse8STnP1DjMekHxEPgYIR9dwM5ygG610BuNAFJXA=="
+      ftPLJA: "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE0y9JFihhOJmT7OcgnrFODhClu/ikOdySwt4rwcyJ1BB8FxIN4Tzpxb9XM42A+H0RxpS9I3m7Y4GweL0ghUwk2w=="
+      ibp09g: "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAECvHxwrwrHpWMhq8Wx1wgBjx55iOPppAUxTKhX5cMQvWkN00iJYPD/C+d0NSYBiiUn32E7s49Ne5ttMGMbhnVUA=="
+      qV5OHQ: "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEmA0vmgaCgzLafUh0Sje2Y1jzUJsCD4Reb6dOuUrjcUp45qXfK/OQMTE7j0Uwt9Zfnens1AEXx7S1PPQxg4OqYg=="
+roleProvider:
+  name: yaml
+  options:
+    path: ./role.yaml

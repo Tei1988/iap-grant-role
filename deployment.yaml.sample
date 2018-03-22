@@ -1,0 +1,187 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: iap-grant-role
+  labels:
+    app: iap-grant-role
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iap-grant-role
+  template:
+    metadata:
+      labels:
+        app: iap-grant-role
+    spec:
+      containers:
+        - name: nginx
+          image: library/nginx:latest
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/
+              readOnly: true
+        - name: iap-grant-role
+          image: gcr.io/tei1988-mlit-station-api/iap-grant-role:latest
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          command: ['./iap-grant-role']
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: iap-grant-role-config
+              mountPath: /opt/app/config
+              readOnly: true
+        - name: php
+          image: php:alpine3.7
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          imagePullPolicy: Always
+          env:
+            - name: TZ
+              value: Asia/Tokyo
+          workingDir: /var/www/html
+          command: ['php', '-S', '0.0.0.0:8080', '-t', '/var/www/html', 'index.php']
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          volumeMounts:
+            - name: test-php
+              mountPath: /var/www/html
+              readOnly: true
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: iap-nginx-config
+        - name: test-php
+          configMap:
+            name: test-php
+        - name: iap-grant-role-config
+          configMap:
+            name: iap-grant-role-config
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: iap-grant-role
+  labels:
+    app: iap-grant-role
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 32000
+  selector:
+    app: iap-grant-role
+  type: NodePort
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iap-nginx-config
+data:
+  _log_format.conf: |-
+    log_format  user  '$request_id $remote_addr - $x_granted_email_address [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+  backend.conf: |-
+    server {
+      listen unix:/tmp/backend.sock;
+      server_name _;
+
+      underscores_in_headers on;
+
+      access_log off;
+
+      if ($http_x_granted_role != "ADMIN") {
+        return 403;
+      }
+
+      location / {
+        proxy_http_version 1.1;
+        proxy_pass http://127.0.0.1:8080;
+      }
+    }
+  frontend.conf: |-
+    upstream nginx-internal-sock {
+      server unix:/tmp/backend.sock;
+    }
+    server {
+      listen       80 default;
+      server_name  _;
+
+      underscores_in_headers on;
+
+      root   /usr/share/nginx/html;
+      index  index.html index.htm;
+
+      access_log  /var/log/nginx/access.log  user;
+
+      location / {
+        auth_request /_auth;
+        auth_request_set $x_granted_role $upstream_http_x_granted_role;
+        auth_request_set $x_granted_email_address $upstream_http_x_granted_email_address;
+
+        proxy_set_header "X-Granted-Role" $x_granted_role;
+        proxy_set_header "HTTP_REMOTE_USER" $x_granted_email_address;
+        proxy_http_version 1.1;
+        proxy_pass http://nginx-internal-sock;
+      }
+
+      location /_auth {
+        internal;
+        proxy_http_version 1.1;
+        proxy_pass_request_body off;
+        proxy_pass http://127.0.0.1:3000/auth;
+      }
+
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-php
+data:
+  index.php: |-
+    <?php
+
+    var_dump(getallheaders());
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iap-grant-role-config
+data:
+  config.yaml: |-
+    authProvider:
+      name: iap
+      options:
+        publicKeyMap:
+          OkEuGA: "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZ01t7BO7a1n6tgy8WuzCbDUaxQwlcr75tktj8YZ5GeKXdJAYGhyksJEGZkaXUDDsxlxUFORPfgG7iwKdkEPNnA=="
+          UlmhOQ: "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAET0DXDKPRhYGNGy5P9OeI/Lxa6IwEFNv5N86By3mdORe3KPse8STnP1DjMekHxEPgYIR9dwM5ygG610BuNAFJXA=="
+          ftPLJA: "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE0y9JFihhOJmT7OcgnrFODhClu/ikOdySwt4rwcyJ1BB8FxIN4Tzpxb9XM42A+H0RxpS9I3m7Y4GweL0ghUwk2w=="
+          ibp09g: "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAECvHxwrwrHpWMhq8Wx1wgBjx55iOPppAUxTKhX5cMQvWkN00iJYPD/C+d0NSYBiiUn32E7s49Ne5ttMGMbhnVUA=="
+          qV5OHQ: "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEmA0vmgaCgzLafUh0Sje2Y1jzUJsCD4Reb6dOuUrjcUp45qXfK/OQMTE7j0Uwt9Zfnens1AEXx7S1PPQxg4OqYg=="
+    roleProvider:
+      name: yaml
+      options:
+        path: config/role.yaml
+  role.yaml: |-
+    role:
+      "alice@example.com":
+        X-GRANTED-ROLE: ADMIN
+      "bob@example.com":
+        X-GRANTED-ROLE: ADMIN
