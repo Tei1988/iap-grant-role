@@ -12,6 +12,8 @@ func RoleProviderFactory(config common.ProviderConfig) IRoleProvider {
 	switch config.Name {
 	case "yaml":
 		rp = NewYamlRoleProvider(config.Options)
+	case "pass-through":
+		rp = NewPassThroughRoleProvider(config.Options)
 	default:
 		log.Fatal(fmt.Sprintf("%s is not registered.", config.Name))
 	}

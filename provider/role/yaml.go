@@ -10,6 +10,7 @@ import (
 )
 
 func NewYamlRoleProvider(config map[string]interface{}) IRoleProvider {
+	log.Println("A yaml role provider is initialized.")
 	filepath := config["path"].(string)
 
 	data, err := ioutil.ReadFile(filepath)
