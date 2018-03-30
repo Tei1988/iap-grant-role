@@ -27,7 +27,7 @@ spec:
               mountPath: /etc/nginx/conf.d/
               readOnly: true
         - name: iap-grant-role
-          image: gcr.io/tei1988-mlit-station-api/iap-grant-role:latest
+          image: tei1988/iap-grant-role:latest
           ports:
             - name: http
               containerPort: 3000
