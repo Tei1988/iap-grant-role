@@ -3,6 +3,8 @@ package auth
 import (
 	"crypto/x509"
 	"encoding/base64"
+	"fmt"
+	"log"
 	"net/http"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -33,8 +35,15 @@ func (ap iapAuthProvider) Authenticate(r *http.Request) (common.EmailAddress, er
 }
 
 func (ap iapAuthProvider) findPublicKey(t *jwt.Token) (interface{}, error) {
-	key := ap.PublicKeyMap[t.Header["kid"].(string)]
-	asn1, _ := base64.URLEncoding.DecodeString(key)
-	publicKey, _ := x509.ParsePKIXPublicKey(asn1)
+	kid := t.Header["kid"].(string)
+	key := ap.PublicKeyMap[kid]
+	asn1, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		log.Println(fmt.Sprintf("Decoding %s is failed", key), err)
+	}
+	publicKey, err := x509.ParsePKIXPublicKey(asn1)
+	if err != nil {
+		log.Println(fmt.Sprintf("Parsing %s is failed", key), err)
+	}
 	return publicKey, nil
 }
